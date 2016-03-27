@@ -14,23 +14,6 @@ public class Opinion implements Instance {
     public String text;
     public String author;
 
-    public Opinion() {}
-
-    public Opinion(String topic, String debate,
-                   int id, int pid, int stance,
-                   String rebuttal, String text,
-                   String author) {
-
-        this.topic = topic;
-        this.debate = debate;
-        this.id = id;
-        this.pid = pid;
-        this.stance = stance;
-        this.rebuttal = rebuttal;
-        this.text = text;
-        this.author = author;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Opinion)) {

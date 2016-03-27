@@ -1,4 +1,4 @@
-.PHONY: all clean print
+.PHONY: all clean
 
 JC = javac
 LIB = ./lib/
