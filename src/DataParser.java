@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+/**
+ * @author pachecog@purdue.edu
+ * @version 3/27/2016
+ */
+
 public class DataParser {
 
     public static String parseTextFile(String textFilename) throws IOException {
@@ -70,7 +75,7 @@ public class DataParser {
         }
     }
 
-    public static List<HashMap<String, Instance> > getFolds() throws IOException {
+    public static List<HashMap<String, Instance> > parseFolds() throws IOException {
         ArrayList<HashMap<String,Instance> > folds = new ArrayList<>(4);
         Pattern pattern = Pattern.compile("([A-Z]+)\\d+");
 

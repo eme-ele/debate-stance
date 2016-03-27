@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) {
 
         try {
-            DataParser.getFolds();
+            DataParser.parseFolds();
         } catch (Exception e) {
             e.printStackTrace();
         }
