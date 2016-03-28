@@ -37,7 +37,7 @@ public class Main {
                 fe.selectFeatures();
                 List<HashMap<Integer, Float> > feats = fe.getFeatureVector(trainingSet);
 
-                SenseClassifier classifier = new SenseClassifier(1000, 0.1);
+                Perceptron classifier = new Perceptron(1000, 0.1);
                 classifier.train(feats, trainingLabels, fe.numFeatures);
                 System.exit(1);
             }

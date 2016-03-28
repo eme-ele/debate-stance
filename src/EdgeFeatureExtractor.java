@@ -19,7 +19,6 @@ public class EdgeFeatureExtractor extends FeatureExtractor {
      * @param dataset comprised of a list of instances
      * @return a list of indexed features
      * */
-
     public List<HashMap<Integer, Float> > getFeatureVector(List<Instance> dataset) {
         HashMap<String, HashMap<String, Tree> > trees = DataParser.parseTrees(dataset);
         return null;
