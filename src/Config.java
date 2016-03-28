@@ -9,6 +9,6 @@ public class Config {
     public static final String FOLDS_ROOT = DATA_ROOT + "folds/";
     public static final String AUTHOR_ROOT = DATA_ROOT + "authors/";
     public static final String[] TOPICS = {"abortion", "gayRights", "marijuana", "obama"};
-    public static final int NFOLDS = 4;
+    public static final int NFOLDS = 5;
 
 }

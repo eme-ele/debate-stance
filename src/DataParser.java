@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.Collection;
 
 /**
  * @author pachecog@purdue.edu
@@ -32,15 +33,18 @@ public class DataParser {
 
         while (metaDataRow != null) {
             String[] data = metaDataRow.split("=");
-                        switch(data[0]) {
-                case "ID":
-                    opinion.id = Integer.parseInt(data[1]);
-                case "PID":
-                    opinion.pid = Integer.parseInt(data[1]);
-                case "Stance":
-                    opinion.stance = Integer.parseInt(data[1]);
-                case "rebuttal":
-                    opinion.rebuttal = data[1];
+
+            if (data.length == 2) {
+                switch(data[0]) {
+                    case "ID":
+                        opinion.id = Integer.parseInt(data[1]);
+                    case "PID":
+                        opinion.pid = Integer.parseInt(data[1]);
+                    case "Stance":
+                        opinion.stance = Integer.parseInt(data[1]);
+                    case "rebuttal":
+                        opinion.rebuttal = data[1];
+                }
             }
             metaDataRow = metaFile.readLine();
         }
@@ -117,6 +121,15 @@ public class DataParser {
 
         parseAuthorFile(folds);
         return folds;
+    }
+
+    public static List<Integer> parseLabels(Collection<Instance> dataset) {
+        ArrayList<Integer> labels = new ArrayList<>();
+        for (Instance sample: dataset) {
+            Opinion o = (Opinion) sample;
+            labels.add(o.stance);
+        }
+        return labels;
     }
 
 }
