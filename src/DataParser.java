@@ -132,4 +132,24 @@ public class DataParser {
         return labels;
     }
 
+    public static HashMap<String, HashMap<String, Tree> > parseTrees(Collection<Instance> dataset) {
+        HashMap<String, HashMap<String, Tree> > trees = new HashMap<>();
+        for (Instance sample: dataset) {
+            Opinion o = (Opinion) sample;
+            // add topic if it doesn't exist
+            if (!trees.containsKey(o.topic)) {
+                HashMap<String, Tree> debateTrees = new HashMap<>();
+                trees.put(o.topic, debateTrees);
+            }
+            // add debate in topic if doesn't exist
+            if (!trees.get(o.topic).containsKey(o.debate)) {
+                Tree t = new Tree(o.topic, o.debate);
+                trees.get(o.topic).put(o.debate, t);
+            }
+
+            trees.get(o.topic).get(o.debate).addNode(o);
+        }
+        return trees;
+    }
+
 }

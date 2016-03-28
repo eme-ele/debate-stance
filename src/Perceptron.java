@@ -10,14 +10,14 @@ import java.util.Random;
  * @version 3/27/2016
  */
 
-public class SenseClassifier {
+public class Perceptron {
 
     public int maxIter;
     public double learnRate;
     public List<Float> weights;
     public float bias;
 
-    public SenseClassifier(int maxIter, double learnRate) {
+    public Perceptron(int maxIter, double learnRate) {
         this.maxIter = maxIter;
         this.learnRate = learnRate;
     }
