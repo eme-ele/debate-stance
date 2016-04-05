@@ -12,6 +12,39 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 public class Main {
 
+    public static void runLocalClassifier(StanfordCoreNLP pipeline,
+                                          List<Instance> trainingSet,
+                                          List<Integer> trainingLabels,
+                                          List<Instance> testingSet,
+                                          List<Integer> testingLabels)
+    {
+        FeatureExtractor fe = new FeatureExtractor(pipeline);
+        fe.extractFeatures(trainingSet);
+        fe.selectFeatures();
+        List<HashMap<Integer, Float> > featMatrixTrain = fe.getFeatureMatrix(trainingSet);
+        List<HashMap<Integer, Float> > featMatrixTest = fe.getFeatureMatrix(testingSet);
+
+        Perceptron classifier = new Perceptron(100, 0.1);
+        classifier.train(featMatrixTrain, trainingLabels, fe.numFeatures);
+        classifier.test(featMatrixTest, testingLabels);
+    }
+
+    public static void runGlobalClassifier(StanfordCoreNLP pipeline,
+                                           List<Instance> trainingSet,
+                                           List<Instance> testingSet)
+    {
+        List<Tree> trainingTrees = DataParser.getAllTrees(trainingSet);
+        List<Tree> testingTrees = DataParser.getAllTrees(testingSet);
+
+        EdgeFeatureExtractor fe = new EdgeFeatureExtractor(pipeline);
+        fe.extractFeatures(trainingSet);
+        fe.selectFeatures();
+        StructuredPerceptron classifier = new StructuredPerceptron(200, (float)0.1, fe);
+        classifier.train(trainingTrees);
+        classifier.test(testingTrees);
+        //List<HashMap<Integer, Float> > feats = fe.getFeatureMatrix(trainingTrees.get(0));
+    }
+
     public static void main(String[] args) {
 
         Properties props =  new Properties();
@@ -25,21 +58,24 @@ public class Main {
             for (int i = 0; i < Config.NFOLDS; i++) {
                 List<Instance> trainingSet = new ArrayList<>();
                 List<Integer> trainingLabels = new ArrayList<>();
+                List<Instance> testingSet = new ArrayList<>();
+                List<Integer> testingLabels = new ArrayList<>();
                 for (int j = 0; j < Config.NFOLDS; j++) {
                     if (j != i) {
                         trainingSet.addAll(folds.get(j).values());
                         trainingLabels.addAll(DataParser.parseLabels(folds.get(j).values()));
+                    } else {
+                        testingSet.addAll(folds.get(j).values());
+                        testingLabels.addAll(DataParser.parseLabels(folds.get(j).values()));
                     }
                 }
 
-                FeatureExtractor fe = new FeatureExtractor(pipeline);
-                fe.extractFeatures(trainingSet);
-                fe.selectFeatures();
-                List<HashMap<Integer, Float> > feats = fe.getFeatureVector(trainingSet);
+                System.out.println("Fold " + i);
 
-                Perceptron classifier = new Perceptron(1000, 0.1);
-                classifier.train(feats, trainingLabels, fe.numFeatures);
-                System.exit(1);
+                System.out.println("Local classifier");
+                runLocalClassifier(pipeline, trainingSet, trainingLabels, testingSet, testingLabels);
+                System.out.println("Global classifier");
+                runGlobalClassifier(pipeline, trainingSet, testingSet);
             }
 
         } catch (Exception e) {

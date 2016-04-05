@@ -16,12 +16,15 @@ public class Tree {
     public HashMap<String, Instance> roots;
     public HashMap<String, Instance> nodes;
     public HashMap<String, List<String> > adjacencyList;
+    public HashMap<String, String> parents;
 
     public Tree(String topic, String debate) {
         this.topic = topic;
         this.debate = debate;
+        roots = new HashMap<>();
         nodes = new HashMap<>();
         adjacencyList = new HashMap<>();
+        parents = new HashMap<>();
     }
 
      /**
@@ -33,7 +36,9 @@ public class Tree {
         if (adjacencyList.containsKey(headId)) {
             adjacencyList.get(headId).add(tailId);
         } else {
-            adjacencyList.put(headId, new ArrayList<>());
+            List<String> adj = new ArrayList<>();
+            adj.add(tailId);
+            adjacencyList.put(headId, adj);
         }
     }
 
@@ -45,15 +50,20 @@ public class Tree {
     public void addNode(Instance sample) {
         Opinion o = (Opinion) sample;
         String sampleId = o.debate + o.id;
+
+        // create node if it doesn't exist
         if (!nodes.containsKey(sampleId)) {
             nodes.put(sampleId, sample);
         }
 
+        // add it to list of roots if its root
         if (o.pid == -1 && !roots.containsKey(sampleId)) {
             roots.put(sampleId, sample);
         } else {
+            // if not, add edge to the parent
             String parentId = o.debate + o.pid;
             addEdge(parentId, sampleId);
+            parents.put(sampleId, parentId);
         }
     }
 
@@ -74,10 +84,18 @@ public class Tree {
                 String currentNode = queue.poll();
                 // add to subtree
                 st.addNode(nodes.get(currentNode));
-                for (String child: adjacencyList.get(currentNode)) {
-                    if (!visited.contains(child)) {
-                        queue.add(child);
+
+                List<String> neighbours = adjacencyList.get(currentNode);
+                // if it is not a leaf, check its children
+                if (neighbours != null) {
+                    for (String child: neighbours) {
+                        if (!visited.contains(child)) {
+                            queue.add(child);
+                        }
                     }
+                } else {
+                    // add empty adjacency list for leaves
+                    st.adjacencyList.put(currentNode, new ArrayList<>());
                 }
             }
 
@@ -87,5 +105,22 @@ public class Tree {
         return subTrees;
     }
 
+    @Override
+    public String toString() {
+        String str = "roots: ";
+        for (String rootId: roots.keySet()) {
+            str += rootId + " ";
+        }
+        str = str.trim() + "\n";
+        str += "adjacencies:\n";
+        for (String node: adjacencyList.keySet()) {
+            str += node + ": <";
+            for (String adj: adjacencyList.get(node)) {
+                str += adj + ", ";
+            }
+            str = str.trim() + ">\n";
+        }
+        return str;
+    }
 
 }

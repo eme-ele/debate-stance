@@ -132,24 +132,49 @@ public class DataParser {
         return labels;
     }
 
-    public static HashMap<String, HashMap<String, Tree> > parseTrees(Collection<Instance> dataset) {
-        HashMap<String, HashMap<String, Tree> > trees = new HashMap<>();
+    public static HashMap<String, HashMap<String, Tree> > parseForests(Collection<Instance> dataset) {
+        HashMap<String, HashMap<String, Tree> > forests = new HashMap<>();
         for (Instance sample: dataset) {
             Opinion o = (Opinion) sample;
             // add topic if it doesn't exist
-            if (!trees.containsKey(o.topic)) {
-                HashMap<String, Tree> debateTrees = new HashMap<>();
-                trees.put(o.topic, debateTrees);
+            if (!forests.containsKey(o.topic)) {
+                //System.out.println("Adding forests for " + o.topic);
+                HashMap<String, Tree> debateForest = new HashMap<>();
+                forests.put(o.topic, debateForest);
             }
             // add debate in topic if doesn't exist
-            if (!trees.get(o.topic).containsKey(o.debate)) {
+            if (!forests.get(o.topic).containsKey(o.debate)) {
+                //System.out.println("Adding tree for " + o.debate + " in " + o.topic);
                 Tree t = new Tree(o.topic, o.debate);
-                trees.get(o.topic).put(o.debate, t);
+                forests.get(o.topic).put(o.debate, t);
             }
 
-            trees.get(o.topic).get(o.debate).addNode(o);
+            forests.get(o.topic).get(o.debate).addNode(o);
         }
-        return trees;
+        return forests;
+    }
+
+    public static List<Tree> getAllTrees(Collection<Instance> dataset) {
+        HashMap<String, HashMap<String, Tree> > allForests = parseForests(dataset);
+        List<Tree> allTrees = new ArrayList<>();
+
+        for (String topic: allForests.keySet()) {
+            HashMap<String, Tree> debateForests = allForests.get(topic);
+            //System.out.println("Number of debate forests for " + topic + ": " + debateForests.size());
+            List<Tree> forest = new ArrayList<>();
+
+            for (String debate: debateForests.keySet()) {
+                Tree t = debateForests.get(debate);
+                //System.out.println(t);
+                //System.exit(1);
+                forest.addAll(t.getSubtrees());
+            }
+
+            //System.out.println("All trees for " + topic + ": " + forest.size());
+            allTrees.addAll(forest);
+        }
+
+        return allTrees;
     }
 
 }

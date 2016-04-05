@@ -77,11 +77,28 @@ public class Perceptron {
                 }
             }
 
-            System.out.println(1 - ((1.0*numMistakes)/dataset.size()));
+            double trainAccuracy = 1 - ((1.0*numMistakes)/dataset.size());
+            //System.out.println("Training accuracy: " + trainAccuracy);
             if (numMistakes == 0)
                 return;
         }
     }
 
+    public void test(List<HashMap<Integer, Float> > dataset, List<Integer> labels) {
+        int i = 0;
+        int numMistakes = 0;
+        for (HashMap<Integer, Float> sample: dataset) {
+            int pred_label = sign(sample);
+            int true_label = labels.get(i);
+            if (pred_label != true_label) {
+                numMistakes += 1;
+            }
+            i++;
+        }
+
+        double testAccuracy = 1 - ((1.0*numMistakes)/i);
+        System.out.println("Total examples: " + i);
+        System.out.println("Accuracy: " + testAccuracy);
+    }
 
 }

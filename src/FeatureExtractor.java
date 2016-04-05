@@ -52,7 +52,7 @@ public class FeatureExtractor {
             extractUnigrams(sentences);
         }
 
-        System.out.println("Extracted " + unigramFrequency.size() + " distinct unigrams");
+        //System.out.println("Extracted " + unigramFrequency.size() + " distinct unigrams");
     }
 
     public void extractUnigrams(List<CoreMap> sentences) {
@@ -70,10 +70,10 @@ public class FeatureExtractor {
 
      public void selectFeatures() {
         selectUnigrams();
-        System.out.println("Selected " + numUnigrams  + " unigrams");
+        //System.out.println("Selected " + numUnigrams  + " unigrams");
         numFeatures = numUnigrams;
 
-        System.out.println("Selected " + numFeatures  + " features");
+        //System.out.println("Selected " + numFeatures  + " features");
     }
 
     /**
@@ -96,19 +96,24 @@ public class FeatureExtractor {
         numUnigrams = unigramFrequency.size();
     }
 
+    public HashMap<Integer, Float> getFeatureVector(Instance sample, int offset) {
+        List<CoreMap> sentences = preprocessInstance(sample);
+        HashMap<Integer, Float> unigramVector = getUnigramVector(sentences, offset);
+        return unigramVector;
+    }
+
     /**
      * Gets a sparse representation of the feature vector
      * @param dataset comprised of a list of instances
      * @return a list of indexed features
      * */
-    public List<HashMap<Integer, Float> > getFeatureVector(List<Instance> dataset) {
-        ArrayList<HashMap<Integer, Float> > featureVector = new ArrayList<>();
+    public List<HashMap<Integer, Float> > getFeatureMatrix(List<Instance> dataset) {
+        ArrayList<HashMap<Integer, Float> > featureMatrix = new ArrayList<>();
         for (Instance sample: dataset) {
-            List<CoreMap> sentences = preprocessInstance(sample);
-            HashMap<Integer, Float> unigramVector = getUnigramVector(sentences);
-            featureVector.add(unigramVector);
+            HashMap<Integer, Float> featureVector = getFeatureVector(sample, 0);
+            featureMatrix.add(featureVector);
         }
-        return featureVector;
+        return featureMatrix;
     }
 
      /**
@@ -116,13 +121,13 @@ public class FeatureExtractor {
      * @param dataset comprised of a list of instances
      * @return a list of indexed unigrams
      * */
-    public HashMap<Integer, Float> getUnigramVector(List<CoreMap> sentences) {
+    public HashMap<Integer, Float> getUnigramVector(List<CoreMap> sentences, int offset) {
         HashMap<Integer, Float> unigramVector = new HashMap<>();
         for (CoreMap sentence: sentences) {
             for (CoreLabel token: sentence.get(TokensAnnotation.class)) {
                 String word = token.get(TextAnnotation.class);
                 if (unigramIndex.containsKey(word)) {
-                    unigramVector.put(unigramIndex.get(word), (float)unigramFrequency.get(word));
+                    unigramVector.put(unigramIndex.get(word) + offset, (float)unigramFrequency.get(word));
                 }
             }
 
