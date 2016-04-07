@@ -35,14 +35,16 @@ public class Main {
     {
         List<Tree> trainingTrees = DataParser.getAllTrees(trainingSet);
         List<Tree> testingTrees = DataParser.getAllTrees(testingSet);
+        // instances by author
+        HashMap<String, List<Instance>> byAuthorTrain = DataParser.getByAuthor(trainingSet);
+        HashMap<String, List<Instance>> byAuthorTest = DataParser.getByAuthor(trainingSet);
 
         EdgeFeatureExtractor fe = new EdgeFeatureExtractor(pipeline);
         fe.extractFeatures(trainingSet);
         fe.selectFeatures();
         StructuredPerceptron classifier = new StructuredPerceptron(200, (float)0.1, fe);
-        classifier.train(trainingTrees);
-        classifier.test(testingTrees);
-        //List<HashMap<Integer, Float> > feats = fe.getFeatureMatrix(trainingTrees.get(0));
+        classifier.train(trainingTrees, byAuthorTrain);
+        classifier.test(testingTrees, byAuthorTest);
     }
 
     public static void main(String[] args) {

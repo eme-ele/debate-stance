@@ -26,6 +26,11 @@ public class EdgeFeatureExtractor extends FeatureExtractor {
         return edgeFeats;
     }
 
+    public HashMap<Integer, Float> getAuthorFeatures(Instance opinion) {
+        HashMap<Integer, Float> feats = getFeatureVector(opinion, 0);
+        return feats;
+    }
+
     public List<HashMap<Integer, Float> > getFeatureMatrix(Tree tree) {
         List<HashMap<Integer, Float> > feats = new ArrayList<>();
         for (String head: tree.adjacencyList.keySet()) {

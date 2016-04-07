@@ -38,12 +38,16 @@ public class DataParser {
                 switch(data[0]) {
                     case "ID":
                         opinion.id = Integer.parseInt(data[1]);
+                        break;
                     case "PID":
                         opinion.pid = Integer.parseInt(data[1]);
+                        break;
                     case "Stance":
                         opinion.stance = Integer.parseInt(data[1]);
+                        break;
                     case "rebuttal":
                         opinion.rebuttal = data[1];
+                        break;
                 }
             }
             metaDataRow = metaFile.readLine();
@@ -175,6 +179,18 @@ public class DataParser {
         }
 
         return allTrees;
+    }
+
+    public static HashMap<String, List<Instance>> getByAuthor(Collection<Instance> dataset) {
+        HashMap<String, List<Instance>> map = new HashMap<>();
+        for (Instance opinion: dataset) {
+            Opinion o = (Opinion) opinion;
+            if (!map.containsKey(o.author)) {
+                map.put(o.author, new ArrayList<>());
+            }
+            map.get(o.author).add(opinion);
+        }
+        return map;
     }
 
 }
