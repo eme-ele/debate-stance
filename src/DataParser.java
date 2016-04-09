@@ -193,4 +193,16 @@ public class DataParser {
         return map;
     }
 
+    public static HashMap<String, List<Instance>> filterByTopic(Collection<Instance> dataset) {
+        HashMap<String, List<Instance>> map = new HashMap<>();
+        for (Instance opinion: dataset) {
+            Opinion o = (Opinion) opinion;
+            if (!map.containsKey(o.topic)) {
+                map.put(o.topic, new ArrayList<>());
+            }
+            map.get(o.topic).add(opinion);
+        }
+        return map;
+    }
+
 }

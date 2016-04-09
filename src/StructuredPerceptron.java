@@ -55,6 +55,17 @@ public class StructuredPerceptron {
         }
     }
 
+    /*public void pushWeights(int weakEdge,
+                            List<List<Float>> weights, List<Float> bias) {
+        for (int i = 0; i < weights.get(weakEdge).size(); i++) {
+            float prevWeight = weights.get(weakEdge).get(i);
+            Random r = new Random();
+            double randomValue = 0.01 + (0.1 - 0.01) * r.nextDouble();
+            weights.get(weakEdge).set(i, prevWeight);
+        }
+    }*/
+
+
     public float dotProduct(HashMap<Integer, Float> sample, int infereceLabel,
                             List<List<Float> > weights, List<Float> bias) {
         float dotProduct = (float)0.0;
@@ -130,44 +141,60 @@ public class StructuredPerceptron {
 
     }
 
-    public ILPSolver addAuthorVariables(Instance opinion,
+    public ILPSolver addAuthorVariables(int goldenStance,
+                                        String authorId,
+                                        List<Instance> authorPosts,
                                         HashMap<String, List<InferenceVariable> > varsCache,
                                         ILPSolver solver) {
-        String authorId = ((Opinion) opinion).author;
-        int goldenStance = ((Opinion) opinion).stance;
         if (!varsCache.containsKey(authorId)) {
-            HashMap<Integer, Float> feats = fe.getAuthorFeatures(opinion);
             varsCache.put(authorId, new ArrayList<>());
-            double score1 = dotProduct(feats, 0, this.authorWeights, this.authorBias);
-            double score2 = dotProduct(feats, 1, this.authorWeights, this.authorBias);
-            int id1 = solver.addBooleanVariable(score1);
-            int id2 = solver.addBooleanVariable(score2);
-            InferenceVariable v1 = new AuthorVariable(id1, score1, authorId, -1,
-                                                      authorId+"="+-1, feats,
+            //double score1 = dotProduct(feats, 0, this.authorWeights, this.authorBias);
+            //double score2 = dotProduct(feats, 1, this.authorWeights, this.authorBias);
+            int id1 = solver.addBooleanVariable(1);
+            int id2 = solver.addBooleanVariable(1);
+            InferenceVariable v1 = new AuthorVariable(id1, 1, authorId, -1,
+                                                      authorId+"="+-1,
                                                       goldenStance);
-            InferenceVariable v2 = new AuthorVariable(id2, score2, authorId, 1,
-                                                      authorId+"="+1, feats,
+            InferenceVariable v2 = new AuthorVariable(id2, 1, authorId, 1,
+                                                      authorId+"="+1,
                                                       goldenStance);
+            int[] constraintVars = {v1.ilpId, v2.ilpId};
+            double[] constraintCoef = {1, 1};
+            solver.addEqualityConstraint(constraintVars, constraintCoef, 1);
             varsCache.get(authorId).add(v1);
             varsCache.get(authorId).add(v2);
         }
         return solver;
     }
 
-    public ILPSolver addEdgeVariables(Instance headOpinion, Instance tailOpinion,
+    public ILPSolver addEdgeVariables(Tree tree,
+                                      Instance headOpinion, Instance tailOpinion,
                                       String head, String tail, String topic,
                                       HashMap<String, List<InferenceVariable> > varsCache,
-                                      ILPSolver solver) {
+                                      ILPSolver solver,
+                                      HashMap<String,List<Instance>> byAuthor,
+                                      boolean authorLevel) {
 
         String edgeId = topic+head+tail;
-        HashMap<Integer, Float> edgeFeats = fe.getEdgeFeatures(headOpinion, tailOpinion);
+        String headAuthor = ((Opinion) headOpinion).author;
+        String tailAuthor = ((Opinion) tailOpinion).author;
+
+        HashMap<Integer, Float> edgeFeats;
+        if (authorLevel)
+            edgeFeats = fe.getAuthorLevelEdgeFeatures(tree, headOpinion, tailOpinion,
+                                                      byAuthor.get(headAuthor),
+                                                      byAuthor.get(tailAuthor));
+        else
+            edgeFeats = fe.getOpinionLevelEdgeFeatures(tree, headOpinion, tailOpinion);
+
         varsCache.put(edgeId, new ArrayList<>());
         // iterate over possible classes and add ilp variables
         for (int j = 0; j < 4; j++) {
+            int weakEdge = getEdge(((Opinion)headOpinion).weakStance, ((Opinion)tailOpinion).weakStance);
+            //pushWeights(weakEdge, this.edgeWeights, this.edgeBias);
             double score = dotProduct(edgeFeats, j, this.edgeWeights, this.edgeBias);
             int id = solver.addBooleanVariable(score);
             String edge = edgeVariables[j];
-            //int goldenEdge = getEdge(ho.stance, to.stance);
             InferenceVariable v = new EdgeVariable(id, score, edgeId, j,
                                                    head+"--"+edge+"-->"+tail,
                                                    headOpinion, tailOpinion,
@@ -344,6 +371,32 @@ public class StructuredPerceptron {
         solver.addGreaterThanConstraint(constraintVars7, constraintCoef7, 0);
         solver.addGreaterThanConstraint(constraintVars8, constraintCoef8, 0);
 
+        // head  1 => aa or ad
+        // aa + ad -head1 >= 0
+        int[] constraintVars9 = {varsCache.get(headAuthor).get(1).ilpId,
+                                 varsCache.get(edgeId).get(0).ilpId,
+                                 varsCache.get(edgeId).get(1).ilpId};
+        double [] constraintCoef9 = {-1, 1, 1};
+        solver.addGreaterThanConstraint(constraintVars9, constraintCoef9, 0);
+        // head  -1 => da or dd
+        int[] constraintVars10 = {varsCache.get(headAuthor).get(0).ilpId,
+                                 varsCache.get(edgeId).get(2).ilpId,
+                                 varsCache.get(edgeId).get(3).ilpId};
+        double [] constraintCoef10 = {-1, 1, 1};
+        solver.addGreaterThanConstraint(constraintVars10, constraintCoef10, 0);
+        // tail 1 => aa or da
+        int[] constraintVars11 = {varsCache.get(tailAuthor).get(1).ilpId,
+                                 varsCache.get(edgeId).get(0).ilpId,
+                                 varsCache.get(edgeId).get(2).ilpId};
+        double [] constraintCoef11 = {-1, 1, 1};
+        solver.addGreaterThanConstraint(constraintVars11, constraintCoef11, 0);
+        // tail -1 => ad or dd
+        int[] constraintVars12 = {varsCache.get(tailAuthor).get(0).ilpId,
+                                 varsCache.get(edgeId).get(1).ilpId,
+                                 varsCache.get(edgeId).get(3).ilpId};
+        double [] constraintCoef12 = {-1, 1, 1};
+        solver.addGreaterThanConstraint(constraintVars12, constraintCoef12, 0);
+
         return solver;
     }
 
@@ -355,7 +408,9 @@ public class StructuredPerceptron {
         }
     }
 
-    public Solution ILPinference(Tree tree, HashMap<String, List<Instance>> byAuthor) {
+    public Solution ILPinference(Tree tree, HashMap<String,List<Instance>> byAuthor,
+                                 boolean authorLevel)
+    {
         //System.out.println(tree);
         Solution s = null;
         ILPSolver solver = new GurobiHook();
@@ -370,14 +425,21 @@ public class StructuredPerceptron {
             for (String head: tree.adjacencyList.keySet()) {
                 Instance headOpinion = tree.nodes.get(head);
                 // variables
-                solver = addAuthorVariables(headOpinion, varsCache, solver);
+                String headAuthor = ((Opinion)headOpinion).author;
+                int headStance = ((Opinion)headOpinion).stance;
+                solver = addAuthorVariables(headStance, headAuthor,
+                                            byAuthor.get(headAuthor), varsCache, solver);
 
                 for (String tail: tree.adjacencyList.get(head)) {
                     Instance tailOpinion = tree.nodes.get(tail);
                     // variables
-                    solver = addAuthorVariables(tailOpinion, varsCache, solver);
-                    solver = addEdgeVariables(headOpinion, tailOpinion, head, tail, tree.topic,
-                                              varsCache, solver);
+                    String tailAuthor = ((Opinion)tailOpinion).author;
+                    int tailStance = ((Opinion)tailOpinion).stance;
+                    solver = addAuthorVariables(tailStance, tailAuthor,
+                                                byAuthor.get(tailAuthor), varsCache, solver);
+
+                    solver = addEdgeVariables(tree, headOpinion, tailOpinion, head, tail, tree.topic,
+                                              varsCache, solver, byAuthor, authorLevel);
                     // constraints
                     solver = addCardinalityEdgeConstraints(head, tail, tree.topic,
                                                            varsCache, solver);
@@ -385,6 +447,7 @@ public class StructuredPerceptron {
                                                              head, tail, tree.topic,
                                                              varsCache, solver);
                 }
+
             }
 
             // printing for debugging
@@ -417,21 +480,27 @@ public class StructuredPerceptron {
     }
 
 
-    public void train(List<Tree> dataset, HashMap<String, List<Instance>> byAuthor) {
+    public void train(List<Tree> dataset, HashMap<String, List<Instance>> byAuthor,
+                      boolean authorLevel) {
         this.edgeWeights = new ArrayList<>();
         this.authorWeights = new ArrayList<>();
         this.edgeBias = new ArrayList<>();
         this.authorBias = new ArrayList<>();
 
-        initWeights(fe.numFeatures * 2, 4, this.edgeWeights, this.edgeBias);
-        initWeights(fe.numFeatures, 2, this.authorWeights, this.authorBias);
+        // ugly hack, remember !
+        if (authorLevel)
+            initWeights(fe.numAuthorLevelEdgeFeatures, 4, this.edgeWeights, this.edgeBias);
+        else
+            initWeights(fe.numOpinionLevelEdgeFeatures, 4, this.edgeWeights, this.edgeBias);
+        System.out.println(this.edgeWeights.get(0).size());
+        //System.exit(1);
 
         for (int i = 0; i < maxIter; i++) {
 
             int numMistakes = 0;
             int total = 0;
             for (Tree t: dataset) {
-                Solution s = ILPinference(t, byAuthor);
+                Solution s = ILPinference(t, byAuthor, authorLevel);
 
                 // update rule
                 for (InferenceVariable v: s.solution) {
@@ -449,29 +518,29 @@ public class StructuredPerceptron {
                         } else {
                             total += 1;
                         }
-                    } else if (v instanceof AuthorVariable) {
+                    } /*else if (v instanceof AuthorVariable) {
                         AuthorVariable av = (AuthorVariable) v;
                         if (av.goldenStance != av.stance) {
                             updateWeights(av.stance, av.goldenStance, av.features,
                                           this.authorWeights, this.authorBias);
                         }
-                    }
+                    }*/
                 }
             }
 
             double trainAccuracy = 1 - ((1.0*numMistakes)/total);
-            //System.out.println("Training accuracy: " + trainAccuracy);
+            System.out.println("Training accuracy: " + trainAccuracy);
             if (numMistakes == 0)
                 return;
 
         }
     }
 
-    public void test(List<Tree> dataset, HashMap<String, List<Instance>> byAuthor) {
+    public void test(List<Tree> dataset, HashMap<String, List<Instance>> byAuthor, boolean authorLevel) {
         int numMistakes = 0;
         HashMap<String, Pair> predictions = new HashMap<>();
         for (Tree t: dataset) {
-            Solution s = ILPinference(t, byAuthor);
+            Solution s = ILPinference(t, byAuthor, authorLevel);
 
             for (InferenceVariable v: s.solution) {
 
@@ -516,15 +585,15 @@ abstract class InferenceVariable {
     double score;
     String customId;
     String descriptor;
-    HashMap<Integer, Float> features;
+    //HashMap<Integer, Float> features;
 
     public InferenceVariable(int ilpId, double score, String customId,
-                             String desc, HashMap<Integer, Float> feats) {
+                             String desc) {
         this.ilpId = ilpId;
         this.score = score;
         this.customId = customId;
         this.descriptor = desc;
-        this.features = feats;
+       // this.features = feats;
     }
 
     @Override
@@ -541,10 +610,9 @@ class AuthorVariable extends InferenceVariable {
     public AuthorVariable(int id, double score,
                           String authorId, int stance,
                           String desc,
-                          HashMap<Integer, Float> authorFeats,
                           int goldenStance) {
 
-        super(id, score, authorId, desc, authorFeats);
+        super(id, score, authorId, desc);
         this.stance = stance;
         this.goldenStance = goldenStance;
     }
@@ -556,6 +624,8 @@ class EdgeVariable extends InferenceVariable {
     int edgeTypeIndex;
     Instance headOpinion;
     Instance tailOpinion;
+    HashMap<Integer, Float> features;
+
 
     public EdgeVariable(int id, double score, String edgeId,
                         int edgeTypeIndex, String desc,
@@ -563,11 +633,12 @@ class EdgeVariable extends InferenceVariable {
                         Instance tailOpinion,
                         HashMap<Integer, Float> edgeFeats) {
 
-        super(id, score, edgeId, desc, edgeFeats);
+        super(id, score, edgeId, desc);
 
         this.edgeTypeIndex = edgeTypeIndex;
         this.headOpinion = headOpinion;
         this.tailOpinion = tailOpinion;
+        this.features = edgeFeats;
     }
 
 }

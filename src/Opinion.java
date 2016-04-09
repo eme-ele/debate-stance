@@ -13,6 +13,7 @@ public class Opinion implements Instance {
     public String rebuttal;
     public String text;
     public String author;
+    public int weakStance;
 
     @Override
     public boolean equals(Object obj) {
@@ -38,6 +39,10 @@ public class Opinion implements Instance {
         ret += "Author=" + this.author;
 
         return ret;
+    }
+
+    public void setWeakLabel(int label) {
+        this.weakStance = label;
     }
 
 }

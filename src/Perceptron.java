@@ -87,6 +87,7 @@ public class Perceptron {
     public void test(List<HashMap<Integer, Float> > dataset, List<Integer> labels) {
         int i = 0;
         int numMistakes = 0;
+
         for (HashMap<Integer, Float> sample: dataset) {
             int pred_label = sign(sample);
             int true_label = labels.get(i);
@@ -99,6 +100,17 @@ public class Perceptron {
         double testAccuracy = 1 - ((1.0*numMistakes)/i);
         System.out.println("Total examples: " + i);
         System.out.println("Accuracy: " + testAccuracy);
+    }
+
+
+    public List<Integer> predict(List<HashMap<Integer, Float> > dataset)
+    {
+        List<Integer> predLabels = new ArrayList<>();
+        for (HashMap<Integer, Float> sample: dataset) {
+            int predLabel = sign(sample);
+            predLabels.add(predLabel);
+        }
+        return predLabels;
     }
 
 }

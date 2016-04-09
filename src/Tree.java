@@ -76,7 +76,6 @@ public class Tree {
         for (String root: roots.keySet()) {
             Tree st = new Tree(this.topic, this.debate);
 
-            HashSet<String> visited = new HashSet<>();
             ArrayDeque<String> queue = new ArrayDeque<>();
             queue.add(root);
 
@@ -89,9 +88,7 @@ public class Tree {
                 // if it is not a leaf, check its children
                 if (neighbours != null) {
                     for (String child: neighbours) {
-                        if (!visited.contains(child)) {
-                            queue.add(child);
-                        }
+                        queue.add(child);
                     }
                 } else {
                     // add empty adjacency list for leaves
@@ -122,5 +119,99 @@ public class Tree {
         }
         return str;
     }
+
+    public int getNumChildren(Instance node) {
+        Opinion o = (Opinion) node;
+        String sampleId = o.debate + o.id;
+        return adjacencyList.get(sampleId).size();
+    }
+
+    public int getNodeDepth(Instance node) {
+        int count = 0;
+        Opinion o = (Opinion) node;
+        String sampleId = o.debate + o.id;
+        while (!roots.containsKey(sampleId)) {
+            sampleId = parents.get(sampleId);
+            count += 1;
+        }
+        return count;
+    }
+
+    public int getNumSibilings(Instance node) {
+        Opinion o = (Opinion) node;
+        String sampleId = o.debate + o.id;
+        if (parents.containsKey(sampleId)) {
+            int parentChildren =
+                adjacencyList.get(parents.get(sampleId)).size();
+            return parentChildren - 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public int getNumLeaves(Instance node) {
+        int numLeaves = 0;
+        Opinion o = (Opinion) node;
+        String sampleId = o.debate + o.id;
+        ArrayDeque<String> queue = new ArrayDeque<>();
+        queue.add(sampleId);
+
+        while (queue.size() > 0) {
+            String currentNode = queue.poll();
+
+            List<String> neighbours = adjacencyList.get(currentNode);
+            if (neighbours != null) {
+                for (String child: neighbours) {
+                    queue.add(child);
+                }
+
+            } else {
+                numLeaves++;
+            }
+
+        }
+        return numLeaves;
+
+    }
+
+    public double getAvgDistanceLeaves(Instance node) {
+        int numLeaves = 0;
+        Opinion o = (Opinion) node;
+        String sampleId = o.debate + o.id;
+        ArrayDeque<String> queue = new ArrayDeque<>();
+        HashMap<String, Integer> distances = new HashMap<>();
+        queue.add(sampleId);
+        distances.put(sampleId, 0);
+        List<Integer> finalDistances = new ArrayList<>();
+
+        while (queue.size() > 0) {
+            String currentNode = queue.poll();
+
+            List<String> neighbours = adjacencyList.get(currentNode);
+            if (neighbours != null) {
+                for (String child: neighbours) {
+                    queue.add(child);
+                    distances.put(child, distances.get(currentNode) + 1);
+                }
+
+            } else {
+                finalDistances.add(distances.get(currentNode));
+                numLeaves++;
+            }
+
+        }
+
+        double avg = 0.0;
+        for (Integer leaf: finalDistances) {
+            avg += leaf;
+        }
+
+        if (numLeaves > 0)
+            return avg/numLeaves;
+        else
+            return 0;
+
+    }
+
 
 }

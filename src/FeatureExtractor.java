@@ -70,10 +70,8 @@ public class FeatureExtractor {
 
      public void selectFeatures() {
         selectUnigrams();
-        //System.out.println("Selected " + numUnigrams  + " unigrams");
         numFeatures = numUnigrams;
-
-        //System.out.println("Selected " + numFeatures  + " features");
+        System.out.println("Selected " + numFeatures  + " unigrams");
     }
 
     /**
